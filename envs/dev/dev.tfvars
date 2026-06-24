@@ -1,0 +1,5 @@
+region           = "us-east-1"
+bucket           = "devsecops-tf-state-chinmaya"
+eks_cluster_name = "main"
+env              = "dev"
+domain           = "chinmaya.online"

@@ -1,0 +1,45 @@
+resource "aws_eip" "nat" {
+  domain = "vpc"
+
+  tags = {
+    Name = var.env
+    Env  = var.env
+  }
+}
+
+data "aws_availability_zones" "azs" {}
+
+module "vpc" {
+  source  = "terraform-aws-modules/vpc/aws"
+  version = "6.6.1"
+
+  name = var.env
+  cidr = var.vpc_cidr
+
+  azs             = data.aws_availability_zones.azs.names 
+  private_subnets = var.private_subnet_cidr_blocks
+  public_subnets  = var.public_subnet_cidr_blocks
+
+  enable_dns_hostnames   = true
+  enable_dns_support     = true
+  single_nat_gateway     = true
+  enable_nat_gateway     = true
+  reuse_nat_ips          = true
+  external_nat_ip_ids    = [aws_eip.nat.id]
+
+  map_public_ip_on_launch = true
+
+  private_subnet_tags = {
+    "kubernetes.io/role/internal-elb"                   = 1
+    "kubernetes.io/cluster/${var.eks_cluster_name}-eks" = "owned"
+  }
+
+  public_subnet_tags = {
+    "kubernetes.io/role/elb"                            = 1
+    "kubernetes.io/cluster/${var.eks_cluster_name}-eks" = "owned"
+  }
+
+  tags = {
+    Env = var.env
+  }
+}
